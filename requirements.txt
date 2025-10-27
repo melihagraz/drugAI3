@@ -1,6 +1,5 @@
-streamlit==1.36.0
-rdkit-pypi==2022.9.5
-py3Dmol==2.0.4
-plotly==5.20.0
-pandas==2.2.2
-numpy==1.26.4
+
+streamlit>=1.28.0
+plotly>=5.18.0
+pandas>=2.0.0
+numpy>=1.24.0
