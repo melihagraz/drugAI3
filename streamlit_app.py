@@ -4,18 +4,18 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 
-st.set_page_config(page_title="In Silico De Novo Molekül Tasarımı", layout="wide")
+st.set_page_config(page_title="In Silico De Novo Molecule Design", layout="wide")
 
-st.title("🧬 IN SILICO DE NOVO MOLEKÜL TASARIMI")
+st.title("🧬 IN SILICO DE NOVO MOLECULE DESIGN")
 st.markdown("---")
 
 # ------------------------------------------------------------
-# Yardımcılar
+# Helpers
 # ------------------------------------------------------------
 
 def demo_dataframe(n: int = 10) -> pd.DataFrame:
     return pd.DataFrame({
-        "Molekül ID": [f"Ligand-{str(i).zfill(3)}" for i in range(1, n + 1)],
+        "Molecule ID": [f"Ligand-{str(i).zfill(3)}" for i in range(1, n + 1)],
         "SMILES": [
             "C1=CC=C(C=C1)C(=O)O",
             "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
@@ -50,28 +50,28 @@ def safe_bar_chart(x, y, title, x_title, y_title, height=400, texts=None):
 
 
 # ------------------------------------------------------------
-# Sidebar - Girdiler
+# Sidebar - Inputs
 # ------------------------------------------------------------
 with st.sidebar:
-    st.header("📋 PROJE BİLGİLERİ")
+    st.header("📋 PROJECT INFORMATION")
 
-    proje_adi = st.text_input("Proje Adı", "Proje_001")
+    proje_adi = st.text_input("Project Name", "Project_001")
 
-    st.subheader("🎯 Hedef Protein")
-    pdb_file = st.file_uploader("PDB Dosyası Yükleyin", type=["pdb"])
+    st.subheader("🎯 Target Protein")
+    pdb_file = st.file_uploader("Upload PDB File", type=["pdb"])
 
-    st.subheader("🔍 Bağlanma Bölgesi (Binding Site)")
+    st.subheader("🔍 Binding Site")
     binding_method = st.selectbox(
-        "Binding Site Seçim Yöntemi",
+        "Binding Site Selection Method",
         [
-            "Otomatik tespit (pocket finder)",
-            "Grid box koordinatları",
-            "Referans ligand",
-            "Aminoasit listesi",
+            "Automatic detection (pocket finder)",
+            "Grid box coordinates",
+            "Reference ligand",
+            "Amino acid list",
         ],
     )
 
-    if binding_method == "Grid box koordinatları":
+    if binding_method == "Grid box coordinates":
         col1, col2 = st.columns(2)
         with col1:
             center_x = st.number_input("Center X", value=0.0)
@@ -82,34 +82,34 @@ with st.sidebar:
             size_y = st.number_input("Size Y", value=20.0)
             size_z = st.number_input("Size Z", value=20.0)
 
-    blind_docking = st.checkbox("Blind Docking (Tüm protein tarama)")
+    blind_docking = st.checkbox("Blind Docking (Scan whole protein)")
 
-    st.subheader("🔬 Hedef Konformasyon")
+    st.subheader("🔬 Target Conformation")
     konformasyon = st.selectbox(
-        "Konformasyon Tipi",
-        ["Aktif (agonist-uygun)", "İnaktif (antagonist-uygun)", "Bilinmiyor", "Allosterik Modülatör"],
+        "Conformation Type",
+        ["Active (agonist-like)", "Inactive (antagonist-like)", "Unknown", "Allosteric Modulator"],
     )
 
     istenen_etki = st.radio(
-        "İstenen Farmakolojik Etki",
-        ["Agonist", "Antagonist", "Modülatör", "Allosteric modulator", "Bilinmiyor"],
+        "Desired Pharmacological Effect",
+        ["Agonist", "Antagonist", "Modulator", "Allosteric modulator", "Unknown"],
     )
 
-    st.subheader("👥 Hedef Popülasyon")
+    st.subheader("👥 Target Population")
     populasyon = st.selectbox(
-        "İlaç Kullanım Yaş Grubu",
-        ["0-2", "2-18", "18-45", "45-65", "65-85", "85+", "Bilinmiyor"],
+        "Age Group for Drug Use",
+        ["0-2", "2-18", "18-45", "45-65", "65-85", "85+", "Unknown"],
     )
 
-    st.subheader("💉 Uygulama Yolu")
+    st.subheader("💉 Administration Route")
     uygulama = st.selectbox(
-        "İlaç Uygulama Yolu",
-        ["Oral", "İntravenöz", "İntramüsküler", "İnhalasyon", "Dermal", "Subkütan", "Diğer"],
+        "Drug Administration Route",
+        ["Oral", "Intravenous", "Intramuscular", "Inhalation", "Dermal", "Subcutaneous", "Other"],
     )
 
-    st.subheader("⚙️ Yöntem Seçimi")
+    st.subheader("⚙️ Method Selection")
     yontem = st.selectbox(
-        "De Novo Tasarım Yöntemi",
+        "De Novo Design Method",
         [
             "Fragment-based",
             "SMILES-based generative model (RNN/Transformer)",
@@ -119,68 +119,68 @@ with st.sidebar:
         ],
     )
 
-    seed_file = st.file_uploader("Başlangıç Molekülü (isteğe bağlı)", type=["sdf", "mol2"])
+    seed_file = st.file_uploader("Initial Molecule (optional)", type=["sdf", "mol2"])
 
     molekul_sayisi = st.select_slider(
-        "Üretilecek Molekül Sayısı",
+        "Number of Molecules to Generate",
         options=["1-5", "5-10", "10-50", "50-100"],
     )
 
     st.markdown("---")
-    run_button = st.button("🚀 ANALİZİ BAŞLAT", type="primary", use_container_width=True)
+    run_button = st.button("🚀 START ANALYSIS", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------
-# Ana İçerik (Hata yakalama ile)
+# Main Content (with error handling)
 # ------------------------------------------------------------
 try:
     np.random.seed(42)
     demo_df = demo_dataframe(10)
 
     if run_button and not pdb_file:
-        st.warning("Önce bir PDB dosyası yükleyin.")
+        st.warning("Please upload a PDB file first.")
 
     if pdb_file and run_button:
-        st.success(f"✅ {getattr(pdb_file, 'name', 'PDB')} dosyası başarıyla yüklendi!")
+        st.success(f"✅ {getattr(pdb_file, 'name', 'PDB')} file successfully uploaded!")
 
-        with st.spinner("Analiz yapılıyor... Lütfen bekleyin..."):
+        with st.spinner("Running analysis... Please wait..."):
             import time
             time.sleep(2)
 
-        st.success("✨ Analiz tamamlandı!")
+        st.success("✨ Analysis complete!")
 
         df = demo_dataframe(10)
 
         tab1, tab2, tab3, tab4 = st.tabs([
-            "📊 Genel Sonuçlar",
-            "🔬 Docking Sonuçları",
+            "📊 General Results",
+            "🔬 Docking Results",
             "💊 Druggability Score",
-            "🎨 3D Görselleştirme",
+            "🎨 3D Visualization",
         ])
 
         # ---------------- Tab 1 ----------------
         with tab1:
-            st.header("📊 GENEL SONUÇLAR")
+            st.header("📊 GENERAL RESULTS")
 
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                st.metric("Üretilen Molekül Sayısı", "47")
+                st.metric("Generated Molecules", "47")
             with c2:
-                st.metric("Başarılı Docking", "42")
+                st.metric("Successful Docking", "42")
             with c3:
-                st.metric("Ortalama Binding Affinity", "-8.3 kcal/mol")
+                st.metric("Average Binding Affinity", "-8.3 kcal/mol")
             with c4:
-                st.metric("En İyi Druggability Score", "0.82")
+                st.metric("Best Druggability Score", "0.82")
 
-            st.subheader("Top 10 Molekül Adayı")
+            st.subheader("Top 10 Molecule Candidates")
             st.dataframe(df, use_container_width=True)
 
             c1, c2 = st.columns(2)
             with c1:
                 fig1 = safe_bar_chart(
-                    x=df["Molekül ID"],
+                    x=df["Molecule ID"],
                     y=df["Binding Affinity (kcal/mol)"],
-                    title="Binding Affinity Karşılaştırması",
-                    x_title="Molekül ID",
+                    title="Binding Affinity Comparison",
+                    x_title="Molecule ID",
                     y_title="Binding Affinity (kcal/mol)",
                     height=400,
                 )
@@ -188,10 +188,10 @@ try:
 
             with c2:
                 fig2 = safe_bar_chart(
-                    x=df["Molekül ID"],
+                    x=df["Molecule ID"],
                     y=df["Druggability Score"],
-                    title="Druggability Score Karşılaştırması",
-                    x_title="Molekül ID",
+                    title="Druggability Score Comparison",
+                    x_title="Molecule ID",
                     y_title="Druggability Score",
                     height=400,
                 )
@@ -199,10 +199,10 @@ try:
 
         # ---------------- Tab 2 ----------------
         with tab2:
-            st.header("🔬 DOCKING SONUÇLARI")
+            st.header("🔬 DOCKING RESULTS")
 
-            selected_ligand = st.selectbox("Molekül Seçin", df["Molekül ID"].tolist())
-            idx = df.index[df["Molekül ID"] == selected_ligand][0]
+            selected_ligand = st.selectbox("Select Molecule", df["Molecule ID"].tolist())
+            idx = df.index[df["Molecule ID"] == selected_ligand][0]
 
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -210,44 +210,44 @@ try:
             with c2:
                 st.metric("Docking Score", f"{df.iloc[idx]['Docking Score']}")
             with c3:
-                st.metric("Moleküler Ağırlık", f"{df.iloc[idx]['MW (Da)']} Da")
+                st.metric("Molecular Weight", f"{df.iloc[idx]['MW (Da)']} Da")
 
-            st.subheader("🔗 Ligand-Amino Asit Etkileşimleri")
+            st.subheader("🔗 Ligand-Amino Acid Interactions")
             interactions_df = pd.DataFrame({
-                "Amino Asit": ["ASP102", "HIS57", "SER195", "GLY216", "TRP215", "VAL213"],
-                "Etkileşim Tipi": [
-                    "Hidrojen Bağı",
+                "Amino Acid": ["ASP102", "HIS57", "SER195", "GLY216", "TRP215", "VAL213"],
+                "Interaction Type": [
+                    "Hydrogen Bond",
                     "π-π Stacking",
-                    "Hidrojen Bağı",
-                    "Hidrofobik",
+                    "Hydrogen Bond",
+                    "Hydrophobic",
                     "π-π Stacking",
-                    "Hidrofobik",
+                    "Hydrophobic",
                 ],
-                "Mesafe (Å)": [2.8, 3.5, 2.9, 4.2, 3.8, 4.1],
-                "Enerji Katkısı (kcal/mol)": [-2.5, -1.8, -2.3, -1.2, -1.5, -1.0],
+                "Distance (Å)": [2.8, 3.5, 2.9, 4.2, 3.8, 4.1],
+                "Energy Contribution (kcal/mol)": [-2.5, -1.8, -2.3, -1.2, -1.5, -1.0],
             })
             st.dataframe(interactions_df, use_container_width=True)
 
-            st.subheader("📌 Binding Site Bilgisi")
+            st.subheader("📌 Binding Site Information")
             st.info(
                 """
-                **Aktif Bölge Amino Asitleri:** ASP102, HIS57, SER195, GLY216, TRP215, VAL213, ARG204
+                **Active Site Amino Acids:** ASP102, HIS57, SER195, GLY216, TRP215, VAL213, ARG204
 
-                **Bağlanma Koordinatları:**
+                **Binding Coordinates:**
                 - X: 15.3 Å
                 - Y: 22.7 Å  
                 - Z: 8.9 Å
 
-                **Pocket Hacmi:** 458.3 Ų
+                **Pocket Volume:** 458.3 Ų
                 """
             )
 
-            st.subheader("📊 Konformasyon Kümeleme Analizi")
+            st.subheader("📊 Conformational Clustering Analysis")
             cluster_df = pd.DataFrame(
                 {
                     "Cluster": ["Cluster 1", "Cluster 2", "Cluster 3"],
-                    "Pose Sayısı": [15, 8, 4],
-                    "Ortalama Enerji (kcal/mol)": [-9.2, -8.5, -7.8],
+                    "Pose Count": [15, 8, 4],
+                    "Average Energy (kcal/mol)": [-9.2, -8.5, -7.8],
                     "RMSD (Å)": [1.2, 2.1, 3.5],
                 }
             )
@@ -255,55 +255,54 @@ try:
 
         # ---------------- Tab 3 ----------------
         with tab3:
-            st.header("💊 DRUGGABILITY SCORE DETAYI")
+            st.header("💊 DRUGGABILITY SCORE DETAILS")
 
             selected_ligand_drug = st.selectbox(
-                "Molekül Seçin ", df["Molekül ID"].tolist(), key="drug_select"
+                "Select Molecule ", df["Molecule ID"].tolist(), key="drug_select"
             )
-            idx = df.index[df["Molekül ID"] == selected_ligand_drug][0]
+            idx = df.index[df["Molecule ID"] == selected_ligand_drug][0]
 
             score = float(df.iloc[idx]["Druggability Score"])
             if score >= 0.6:
                 color = "green"
-                status = "✅ YÜKSEK İLAÇLANABİLİRLİK"
+                status = "✅ HIGH DRUGGABILITY"
             elif score >= 0.3:
                 color = "orange"
-                status = "⚠️ ORTA İLAÇLANABİLİRLİK"
+                status = "⚠️ MEDIUM DRUGGABILITY"
             else:
                 color = "red"
-                status = "❌ DÜŞÜK İLAÇLANABİLİRLİK"
+                status = "❌ LOW DRUGGABILITY"
 
             st.markdown(f"## <span style='color:{color}'>{score:.2f}</span>", unsafe_allow_html=True)
             st.markdown(f"### {status}")
 
             st.info(
                 """
-                **Açıklama:** Molekülün bağlanma potansiyeli, farmakokinetik özellikleri ve 
-                toksisite profili göz önünde bulundurularak hesaplanmıştır.
+                **Description:** Calculated considering the molecule’s binding potential, pharmacokinetic properties, and toxicity profile.
                 """
             )
 
-            st.subheader("🧪 Moleküler Özellikler")
+            st.subheader("🧪 Molecular Properties")
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                st.metric("MW", f"{df.iloc[idx]['MW (Da)']} Da", help="Molekül Ağırlığı (ideal: 150-500 Da)")
+                st.metric("MW", f"{df.iloc[idx]['MW (Da)']} Da", help="Molecular Weight (ideal: 150-500 Da)")
             with c2:
-                st.metric("LogP", "3.1", help="Lipofiliklik (optimum: 0-5)")
+                st.metric("LogP", "3.1", help="Lipophilicity (optimum: 0-5)")
             with c3:
-                st.metric("H-Bağı Donör", "2", help="Hidrojen bağı donör sayısı")
+                st.metric("H-Bond Donor", "2", help="Number of hydrogen bond donors")
             with c4:
-                st.metric("H-Bağı Alıcı", "5", help="Hidrojen bağı alıcı sayısı")
+                st.metric("H-Bond Acceptor", "5", help="Number of hydrogen bond acceptors")
 
             c5, c6, c7 = st.columns(3)
             with c5:
-                st.metric("Rotatable Bonds", "4", help="Dönen bağ sayısı (ideal: ≤10)")
+                st.metric("Rotatable Bonds", "4", help="Number of rotatable bonds (ideal: ≤10)")
             with c6:
                 st.metric("PSA", "75 Ų", help="Polar Surface Area")
             with c7:
-                st.metric("SMILES", df.iloc[idx]["SMILES"][:20] + "...", help="Kimyasal yapı kodu")
+                st.metric("SMILES", df.iloc[idx]["SMILES"][:20] + "...", help="Chemical structure code")
 
-            st.subheader("📊 Özellik Dağılımı (Radar Chart)")
-            categories = ["MW", "LogP", "H-Bağı", "PSA", "Rotatable Bonds", "ADME Uyumu"]
+            st.subheader("📊 Property Distribution (Radar Chart)")
+            categories = ["MW", "LogP", "H-Bond", "PSA", "Rotatable Bonds", "ADME Compliance"]
             values = [0.85, 0.75, 0.90, 0.80, 0.88, 0.82]
             fig_radar = go.Figure()
             fig_radar.add_trace(
@@ -314,27 +313,27 @@ try:
             )
             st.plotly_chart(fig_radar, use_container_width=True)
 
-            st.subheader("📈 Molekül Karşılaştırması")
+            st.subheader("📈 Molecule Comparison")
             fig_compare = go.Figure()
             top5 = df.head(5)
             fig_compare.add_trace(
-                go.Bar(x=top5["Molekül ID"], y=top5["Druggability Score"], 
+                go.Bar(x=top5["Molecule ID"], y=top5["Druggability Score"], 
                        text=top5["Druggability Score"], textposition="outside")
             )
             fig_compare.update_layout(
-                title="Top 5 Molekül Druggability Score Karşılaştırması",
-                xaxis_title="Molekül ID",
+                title="Top 5 Molecules Druggability Score Comparison",
+                xaxis_title="Molecule ID",
                 yaxis_title="Druggability Score",
                 height=400,
             )
             st.plotly_chart(fig_compare, use_container_width=True)
 
-            st.subheader("💊 ADME-Tox Profili")
+            st.subheader("💊 ADME-Tox Profile")
             adme_df = pd.DataFrame(
                 {
-                    "Özellik": ["Absorpsiyon", "Dağılım", "Metabolizma", "Eliminasyon", "Toksisite"],
-                    "Değerlendirme": ["İyi", "Orta", "İyi", "İyi", "Düşük Risk"],
-                    "Skor": [0.85, 0.65, 0.80, 0.78, 0.90],
+                    "Property": ["Absorption", "Distribution", "Metabolism", "Elimination", "Toxicity"],
+                    "Evaluation": ["Good", "Moderate", "Good", "Good", "Low Risk"],
+                    "Score": [0.85, 0.65, 0.80, 0.78, 0.90],
                 }
             )
             st.dataframe(adme_df, use_container_width=True)
@@ -342,19 +341,19 @@ try:
             st.markdown("---")
             c1, c2 = st.columns(2)
             with c1:
-                rapor = "Rapor: Örnek analiz sonuçları\nProje: " + proje_adi
-                st.download_button("📄 Raporu İndir (TXT)", rapor, file_name="rapor.txt")
+                rapor = "Report: Sample analysis results\nProject: " + proje_adi
+                st.download_button("📄 Download Report (TXT)", rapor, file_name="report.txt")
             with c2:
                 st.download_button(
-                    "📊 CSV İndir", df.to_csv(index=False), file_name="sonuclar.csv", mime="text/csv"
+                    "📊 Download CSV", df.to_csv(index=False), file_name="results.csv", mime="text/csv"
                 )
 
         # ---------------- Tab 4 ----------------
         with tab4:
-            st.header("🎨 3D GÖRSELLEŞTİRME")
-            st.info("🔬 Protein-Ligand kompleksinin 3D görselleştirmesi (örnek simülasyon)")
+            st.header("🎨 3D VISUALIZATION")
+            st.info("🔬 3D visualization of the protein-ligand complex (sample simulation)")
             selected_ligand_3d = st.selectbox(
-                "Görselleştirilecek Molekül", df["Molekül ID"].tolist(), key="3d_select"
+                "Select Molecule to Visualize", df["Molecule ID"].tolist(), key="3d_select"
             )
 
             fig_3d = go.Figure(
@@ -369,29 +368,29 @@ try:
                 ]
             )
             fig_3d.update_layout(
-                title="Protein-Ligand Kompleksi (Simülasyon)",
+                title="Protein-Ligand Complex (Simulation)",
                 scene=dict(xaxis_title="X (Å)", yaxis_title="Y (Å)", zaxis_title="Z (Å)"),
                 height=600,
             )
             st.plotly_chart(fig_3d, use_container_width=True)
 
             st.markdown("---")
-            st.download_button("💾 PDB Dosyası İndir (Örnek)", "PDB içerik örneği", file_name="complex.pdb")
+            st.download_button("💾 Download PDB File (Sample)", "Sample PDB content", file_name="complex.pdb")
 
     else:
-        st.info("👈 Soldan bir PDB dosyası yükleyip **ANALİZİ BAŞLAT** butonuna basın. Aşağıda örnek bir görünüm var.")
+        st.info("👈 Upload a PDB file from the sidebar and press **START ANALYSIS**. Below is a sample view.")
 
-        st.subheader("Top 10 Molekül Adayı (Örnek)")
+        st.subheader("Top 10 Molecule Candidates (Sample)")
         st.dataframe(demo_df, use_container_width=True)
 
         c1, c2 = st.columns(2)
         with c1:
             st.plotly_chart(
                 safe_bar_chart(
-                    x=demo_df["Molekül ID"],
+                    x=demo_df["Molecule ID"],
                     y=demo_df["Binding Affinity (kcal/mol)"],
-                    title="Binding Affinity Karşılaştırması (Örnek)",
-                    x_title="Molekül ID",
+                    title="Binding Affinity Comparison (Sample)",
+                    x_title="Molecule ID",
                     y_title="Binding Affinity (kcal/mol)",
                 ),
                 use_container_width=True,
@@ -399,10 +398,10 @@ try:
         with c2:
             st.plotly_chart(
                 safe_bar_chart(
-                    x=demo_df["Molekül ID"],
+                    x=demo_df["Molecule ID"],
                     y=demo_df["Druggability Score"],
-                    title="Druggability Score Karşılaştırması (Örnek)",
-                    x_title="Molekül ID",
+                    title="Druggability Score Comparison (Sample)",
+                    x_title="Molecule ID",
                     y_title="Druggability Score",
                 ),
                 use_container_width=True,
@@ -410,9 +409,9 @@ try:
 
     st.markdown("---")
     st.markdown(
-        "💡 **Not:** Bu arayüz örnek çıktılarla çalışır. Gerçek hesaplamalar backend entegrasyonu ile sağlanacaktır."
+        "💡 **Note:** This interface works with sample outputs. Real calculations will be provided via backend integration."
     )
 
 except Exception as e:
-    st.error("Uygulama çalışırken bir hata oluştu. Ayrıntılar aşağıda:")
+    st.error("An error occurred while running the app. Details below:")
     st.exception(e)
